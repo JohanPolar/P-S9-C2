@@ -49,13 +49,11 @@ jobs:
         run: |
           virtualenv env
           source env/bin/activate
-          pip install -r requierements.txt
           pytest
           deactivate
       - name: UpdateJobs
         run: |
           virtualenv env
           source env/bin/activate
-          pip install -r requirements.txt
           python3 ./upload.py
           deactivate
