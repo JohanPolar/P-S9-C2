@@ -34,44 +34,28 @@ jobs:
           aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
           aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
           aws-region: us-east-1
-      - name: Clean Code 
+      - name: Clean Code (Flake8)
         run: |
-          cd test/
           pip install virtualenv
           virtualenv env
           source env/bin/activate
           pip install -r requierements.txt
-          flake8 funtions.py
-          flake8 test_functions.py
-          cd ..
-          cd ParcialBD/
-          flake8 lambdaDatosIn.py
-          cd ..
-          cd ParcialBDLambda2
-          flake8 lambdaDatosProc.py
+          flake8 parcial2.py
+          flake8 test_parcial2.py
+          flake8 parcial2all.py
+          flake8 test_parcial2all.py
           deactivate
       - name: UnitTest
         run: |
-          cd test/
           virtualenv env
           source env/bin/activate
           pip install -r requierements.txt
           pytest
           deactivate
-      - name: DespliegueLambda1
+      - name: UpdateJobs
         run: |
-          cd ParcialBD/
           virtualenv env
           source env/bin/activate
           pip install -r requirements.txt
-          zappa update dev
-          deactivate
-      - name: DespliegueLambda2
-        run: |
-          cd ParcialBDLambda2/
-          virtualenv env
-          source env/bin/activate
-          pip install -r requirements.txt
-          pip install zappa
-          zappa update dev
+          python3 ./upload.py
           deactivate
