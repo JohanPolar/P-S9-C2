@@ -2,6 +2,7 @@ import boto3
 from bs4 import BeautifulSoup
 import datetime
 
+
 paginas = [
     ('El_Espectador', 'https://www.elespectador.com/'),
     ('Publimetro', 'https://www.publimetro.co/'),
@@ -17,8 +18,7 @@ def obtenerA():
     objects = []
 
     for name in paginas:
-        obj = bucket.Object(f'headlines/raw/{name[0]}\
-                            -{date.strftime("%Y-%m-%d")}.html')
+        obj = bucket.Object(f'headlines/raw/{name[0]}-{date.strftime("%Y-%m-%d")}.html')
         body = obj.get()['Body'].read()
         objects.append(body)
 
@@ -59,7 +59,9 @@ def get_info_elespectador(object):
     category = category.replace(",", "")
     link = link.replace(",", "")
     information.append((category, title, link))
+
     columna_central = soup.find_all('section', attrs={'class': 'Layout-mainHomeA'})
+
     columna_central = soup.find_all('div', attrs={'class': 'Card-Container'})
 
     for element in columna_central:
@@ -93,6 +95,7 @@ def get_info_publimetro(object):
     newspaper = "https://www.publimetro.co"
     soup = BeautifulSoup(object, features="lxml")
     information = []
+
     main = soup.find_all('article', attrs={'class': 'container-fluid xl-large-promo'})
     title = main[0].find_all('a', attrs={'class': 'xl-promo-headline'})[0].contents[0]
     link = newspaper
@@ -103,6 +106,7 @@ def get_info_publimetro(object):
     category = category.replace(",", "")
     link = link.replace(",", "")
     information.append((category, title, link))
+
     news = soup.find_all('div', attrs={'class': 'card-list-container'})
     for element in news:
         try:
@@ -202,6 +206,7 @@ def upload_csv(files):
     print("Uploading ", paginas[1][0])
     client.put_object(Body=csv_acum, Bucket='parcialnews',
                       Key=f'headlines/final/periodico={paginas[1][0]}/year={datetime.datetime.now().year}/month={datetime.datetime.now().month}/day={datetime.datetime.now().day}/{paginas[0][0]}-{datetime.datetime.now().strftime("%Y-%m-%d")}.csv')
+
     csv_acum = get_info_eltiempo(files[2])
     print("Uploading ", paginas[2][0])
     client.put_object(Body=csv_acum, Bucket='parcialnews',

@@ -1,16 +1,10 @@
 from parcial2all import csv_parse
 
+
 def test_csv_parse():
-        info = [
-            ('category1', 'title1', 'link1'),
-            ('category2', 'title2', 'link2'),
-            ('category3', 'title3', 'link3')
-        ]
+    info = [("Deportes", "Messi marca un gol histórico", "https://www.ejemplo.com/deportes/messi-gol-historico"),
+            ("Política", "Candidato X presenta su plan de gobierno", "https://www.ejemplo.com/politica/candidato-x-plan-gobierno")]
 
-        csv_result = csv_parse(info)
+    expected_output = "categoria, titulo, link\nDeportes, Messi marca un gol histórico, https://www.ejemplo.com/deportes/messi-gol-historico\nPolítica, Candidato X presenta su plan de gobierno, https://www.ejemplo.com/politica/candidato-x-plan-gobierno\n"
 
-        expected_csv = "categoria, titulo, link\n" \
-                       "category1, title1, link1\n" \
-                       "category2, title2, link2\n" \
-                       "category3, title3, link3\n"
-        assert csv_result == expected_csv
+    assert csv_parse(info) == expected_output
