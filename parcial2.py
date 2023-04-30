@@ -1,18 +1,25 @@
-import sys 
-import boto3 
-import urllib.request 
-from datetime import datetime  
+import boto3
+import urllib.request
+from datetime import datetime
 
-content_todownload = [('El_Espectador', 'https://www.elespectador.com/'),     
-                      ('Publimetro', 'https://www.publimetro.co/'),     
-                      ('El_Tiempo', 'https://www.eltiempo.com/')]
 
-session = boto3.Session()
-s3 = session.resource('s3')
-bucket = s3.Bucket('parcialtiempo')
+def capture_data():
+    session = boto3.Session()
+    s3 = session.resource('s3')
+    bucket = s3.Bucket('parcialnews')
+    date = datetime.now().strftime("%Y-%m-%d")
+    response = urllib.request.urlopen('https://www.elespectador.com/')
+    webContent = response.read()
+    bucket.put_object(Body=webContent, Key='headlines/raw/{}-{}.html'
+                      .format('El_Espectador', date))
+    response = urllib.request.urlopen('https://www.publimetro.co/')
+    webContent = response.read()
+    bucket.put_object(Body=webContent, Key='headlines/raw/{}-{}.html'
+                      .format('Publimetro', date))
+    response = urllib.request.urlopen('https://www.eltiempo.com/')
+    webContent = response.read()
+    bucket.put_object(Body=webContent, Key='headlines/raw/{}-{}.html'
+                      .format('El_Tiempo', date))
 
-date = datetime.now().strftime("%Y-%m-%d")
-for name, url in content_todownload:     
-    response = urllib.request.urlopen(url)     
-    webContent = response.read().decode('UTF-8')     
-    bucket.put_object(Body=webContent, Key='headlines/raw/{}-{}.html'.format(name, date))
+
+capture_data()

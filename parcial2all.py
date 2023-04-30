@@ -1,139 +1,213 @@
-import json
 import boto3
-from datetime import datetime
-import datetime as dt
 from bs4 import BeautifulSoup
+import datetime
+
+paginas = [
+    ('El_Espectador', 'https://www.elespectador.com/'),
+    ('Publimetro', 'https://www.publimetro.co/'),
+    ('El_Tiempo', 'https://www.eltiempo.com')
+]
+
+
+def obtenerA():
+    date = datetime.datetime.now()
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket('parcialnews')
+
+    objects = []
+
+    for name in paginas:
+        obj = bucket.Object(f'headlines/raw/{name[0]}\
+                            -{date.strftime("%Y-%m-%d")}.html')
+        body = obj.get()['Body'].read()
+        objects.append(body)
+
+    return objects
+
 
 def csv_parse(info):
     csv_acum = "categoria, titulo, link\n"
     for row in info:
-        csv_acum+=row[0]
-        csv_acum+=", "
+        csv_acum += row[0]
+        csv_acum += ", "
 
-        csv_acum+=row[1]
-        csv_acum+=", "
+        csv_acum += row[1]
+        csv_acum += ", "
 
-        csv_acum+=row[2]
-        csv_acum+="\n"
+        csv_acum += row[2]
+        csv_acum += "\n"
     return csv_acum
 
-def get_objects(pagina):
 
-    date = datetime.now()+ dt.timedelta(hours=5)
-    s3 = boto3.resource('s3')
-    bucket = s3.Bucket('parcialtiempo')
-
-    objects = []
-
-    content_todownload = [('El_Espectador', 'https://www.elespectador.com/'),     
-                      ('Publimetro', 'https://www.publimetro.co/'),     
-                      ('El_Tiempo', 'https://www.eltiempo.com/')]
-
-    name = content_todownload[pagina]
-    obj = bucket.Object(f'/headlines/raw/{name[0]}-{date.strftime("%Y-%m-%d")}.html')
-    body = obj.get()['Body'].read()
-    return body
-
-def proccesing_data_elespectador():
+def get_info_elespectador(object):
     newspaper = "elespectador.com"
-    soup = BeautifulSoup(get_objects(0), features="lxml")
+    soup = BeautifulSoup(object, features="lxml")
 
-    information =[]
+    information = []
 
-    #Titular principal
     data = soup.find_all('div', attrs={'class': 'Card-Container'})
     category = data[0].find_all('h4', attrs={'class': 'Card-Section Section'})
-    category = category[0].find_all('a')[0].contents[0]
+    try:
+        category = category[0].find_all('a')[0].contents[0]
+    except:
+        category = ""
     title = data[0].find_all('h2', attrs={'class': 'Card-Title Title Title_main'})
     link = newspaper
-    link += title[0].find_all('a', href = True)[0]['href']
+    link += title[0].find_all('a', href=True)[0]['href']
     title = title[0].find_all('a')[0].contents[0]
-
+    title = title.replace(",", "")
+    category = category.replace(",", "")
+    link = link.replace(",", "")
     information.append((category, title, link))
-
-    #Columnas
     columna_central = soup.find_all('section', attrs={'class': 'Layout-mainHomeA'})
-    
     columna_central = soup.find_all('div', attrs={'class': 'Card-Container'})
 
-    print(len(columna_central))
-
     for element in columna_central:
-        #Card-Section Section
 
         try:
             category = element.find_all('h4', attrs={'class': 'Card-Section Section'})
             category = category[0].find_all('a')[0].contents[0]
         except:
             category = ""
-        
+
         title = element.find_all('h2', attrs={'class': 'Card-Title Title Title'})
         link = newspaper
         try:
-            link += title[0].find_all('a', href = True)[0]['href']
+            link += title[0].find_all('a', href=True)[0]['href']
         except:
             link = ""
-            
+
         try:
             title = title[0].find_all('a')[0].contents[0]
         except:
             title = ""
-
+        title = title.replace(",", "")
+        category = category.replace(",", "")
+        link = link.replace(",", "")
         information.append((category, title, link))
 
     return csv_parse(information)
 
-def proccesing_data_el_tiempo():
-    body = get_objects(2)
-    soup = BeautifulSoup(body, 'html.parser')
-    data_casas = soup.find_all('div', class_='listing listing-card')
-    data_barrio = soup.find_all('div', class_='listing-card__location')
-    data_precio = soup.find_all('div', class_='price')
 
-    print(format)
+def get_info_publimetro(object):
+    newspaper = "https://www.publimetro.co"
+    soup = BeautifulSoup(object, features="lxml")
+    information = []
+    main = soup.find_all('article', attrs={'class': 'container-fluid xl-large-promo'})
+    title = main[0].find_all('a', attrs={'class': 'xl-promo-headline'})[0].contents[0]
+    link = newspaper
+    link += main[0].find_all('a', attrs={'class': 'xl-promo-headline'}, href=True)[0]['href']
+    category = ""
 
-    csv = "FechaDescarga, Barrio, Valor, NumHabitaciones, NumBanos, mts2\n"
+    title = title.replace(",", "")
+    category = category.replace(",", "")
+    link = link.replace(",", "")
+    information.append((category, title, link))
+    news = soup.find_all('div', attrs={'class': 'card-list-container'})
+    for element in news:
+        try:
+            category = element.find_all('span', attrs={'class': 'primary-font__PrimaryFontStyles-o56yd5-0 ctbcAa overline card-list-overline'})[0].contents[0]
+        except:
+            category = ""
 
-    for i in range(len(data_casas)):
-        download_date = now.strftime('%d-%m-%Y')
-        barrio = (data_barrio[i].text)
-        newBarrio = ""
-        for j in barrio:
-            newBarrio += j
-        barrio = newBarrio.replace(',', '.')
-        price = (data_precio[i].text)
-        num_rooms = (f"{data_casas[i]['data-rooms']}")
-        num_BRooms = (f"{data_casas[i].find_all('div', class_='listing-card__properties')[0].find_all('span')[1].text[:1]}")
-        mts = (f"{data_casas[i].find_all('div', class_='listing-card__properties')[0].find_all('span')[2].text}")
-        csv += f"{download_date}, {barrio}, {price}, {num_rooms}, {num_BRooms}, {mts}\n"
+        try:
+            title = element.find_all('h2', attrs={'class': 'primary-font__PrimaryFontStyles-o56yd5-0 ctbcAa card-list-headline'})
+            title = title[0].find_all('a', attrs={'class': 'list-anchor vertical-align-image'})[0].contents[0]
 
-    client = boto3.client("s3")
-    client.put_object(Body=csv, Bucket="casas-final-3003", Key='' + str(now.year) + '-' + str(now.month) + '-' + str(now.day) + '.csv')
-    return {
-        'statusCode': 202,
-        'body': json.dumps('Hello from Lambda!')
-    }
+        except:
+            title = ""
+
+        try:
+            link = newspaper
+            link_1 = element.find_all('h2', attrs={'class': 'primary-font__PrimaryFontStyles-o56yd5-0 ctbcAa card-list-headline'})
+            link += link_1[0].find_all('a', attrs={'class': 'list-anchor vertical-align-image'}, href=True)[0]['href']
+        except:
+            link = ""
+        title = title.replace(",", "")
+        category = category.replace(",", "")
+        link = link.replace(",", "")
+        information.append((category, title, link))
+
+    return csv_parse(information)
 
 
+def get_info_eltiempo(object):
+    newspaper = "eltiempo.com"
+    soup = BeautifulSoup(object, features="lxml")
 
-def get_objects(pagina):
+    information = []
 
-    date = datetime.now()+ dt.timedelta(hours=5)
-    s3 = boto3.resource('s3')
-    bucket = s3.Bucket('parcialtiempo')
+    data = soup.find_all('div', attrs={'class': 'article-details'})
 
-    objects = []
+    for element in data[:7]:
 
-    content_todownload = [('El_Espectador', 'https://www.elespectador.com/'),     
-                      ('Publimetro', 'https://www.publimetro.co/'),     
-                      ('El_Tiempo', 'https://www.eltiempo.com/')]
+        try:
+            category = element.find_all('div', attrs={'class': 'category-published'})
+            category = category[0].find_all('a')[0].contents[0]
+        except:
+            category = ""
 
-    name = content_todownload[pagina]
-    obj = bucket.Object(f'/headlines/raw/{name[0]}-{date.strftime("%Y-%m-%d")}.html')
-    body = obj.get()['Body'].read()
-    return body
+        title = element.find_all('h3', attrs={'class': 'title-container'})
+        link = newspaper
+        try:
+            link += title[0].find_all('a', href=True)[0]['href']
+        except:
+            link = ""
 
-now = datetime.now()
-csv_espectador = proccesing_data_elespectador()
-client = boto3.client("s3")
-client.put_object(Body=csv_espectador, Bucket="parcialtiempo", Key="/headlines/final/periodico=El_espectador/year=" + str(now.year) + "/month="+str(now.month)+"/day="+str(now.day) + ".csv")
+        try:
+            title = title[0].find_all('a')[0].contents[0]
+        except:
+            title = ""
+        title = title.replace(",", "")
+        category = category.replace(",", "")
+        link = link.replace(",", "")
+        information.append((category, title, link))
+
+    for element in data[7:]:
+
+        try:
+            category = element.find_all('div', attrs={'class': 'category-published'})
+            category = category[0].find_all('a')[0].contents[0]
+        except:
+            category = ""
+
+        title = element.find_all('h2', attrs={'class': 'title-container'})
+        link = newspaper
+        try:
+            link += title[0].find_all('a', href=True)[0]['href']
+        except:
+            link = ""
+
+        try:
+            title = title[0].find_all('a')[1].contents[0]
+        except:
+            title = ""
+        title = title.replace(",", "")
+        category = category.replace(",", "")
+        link = link.replace(",", "")
+        information.append((category, title, link))
+
+    return csv_parse(information)
+
+
+def upload_csv(files):
+    print("Getting files")
+    csv_acum = get_info_elespectador(files[0])
+    client = boto3.client('s3')
+    print("Uploading ", paginas[0][0])
+    client.put_object(Body=csv_acum, Bucket='parcialnews',
+                      Key=f'headlines/final/periodico={paginas[0][0]}/year={datetime.datetime.now().year}/month={datetime.datetime.now().month}/day={datetime.datetime.now().day}/{paginas[0][0]}-{datetime.datetime.now().strftime("%Y-%m-%d")}.csv')
+
+    csv_acum = get_info_publimetro(files[1])
+    print("Uploading ", paginas[1][0])
+    client.put_object(Body=csv_acum, Bucket='parcialnews',
+                      Key=f'headlines/final/periodico={paginas[1][0]}/year={datetime.datetime.now().year}/month={datetime.datetime.now().month}/day={datetime.datetime.now().day}/{paginas[0][0]}-{datetime.datetime.now().strftime("%Y-%m-%d")}.csv')
+    csv_acum = get_info_eltiempo(files[2])
+    print("Uploading ", paginas[2][0])
+    client.put_object(Body=csv_acum, Bucket='parcialnews',
+                      Key=f'headlines/final/periodico={paginas[2][0]}/year={datetime.datetime.now().year}/month={datetime.datetime.now().month}/day={datetime.datetime.now().day}/{paginas[0][0]}-{datetime.datetime.now().strftime("%Y-%m-%d")}.csv')
+
+
+objects = obtenerA()
+
+upload_csv(objects)
