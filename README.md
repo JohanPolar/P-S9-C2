@@ -83,6 +83,8 @@ El proyecto cuenta con:
     
 * Por último, la ejecución del crawler2 permite el escaneo y creación de una nueva tabla en AWS Glue que se extrae de RDS, con el fin de ser compatibles con los datos enviados a RDS a través de dicha tabla. De esta manera, se termina dentro de la base de datos preparada para realizar consultas de manera eficiente.
 
+Los resultados se pueden observar en el siguiente link: https://docs.google.com/document/d/1ceelrxlIoLL2XlR2TA3sU5ugjfLSWHdkgz2aLnC3r9w/edit?usp=sharing
+
 #### TENER EN CUENTA:
 Se debe cambiar las variables privadas de GitHubActions, para que tenga el acceso a su cuenta de AWS y pueda realizar todas las acciones respectivas
 
